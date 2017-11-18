@@ -58,10 +58,10 @@ class InMemoryStore(Store):
         return True
 
     def batch_put(self, kvs):
-        stats = {'keys_added': 0, 'keys_failed': 0}
+        stats = {'keys_added': 0, 'keys_failed': []}
         for kv in kvs:
             if self.put(kv["key"], kv["value"]): stats["keys_added"] += 1
-            else: stats["keys_failed"] += 1
+            else: stats["keys_failed"].append(kv.get("key", "Missing-Key-Field"))
         return stats
 
     def _get_payload(self, k):
