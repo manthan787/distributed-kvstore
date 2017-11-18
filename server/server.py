@@ -44,23 +44,25 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_error(NOT_FOUND)
 
     def do_PUT(self):
-        if not self._is_request_valid(): return self.send_error(BAD_REQUEST)
+        if not self._is_json_request(): return self.send_error(BAD_REQUEST)
         request = self._read_request_body()
         if self._path_equals("/set"):
             pass
         self.wfile.write(self)
 
     def do_POST(self):
-        if not self._is_request_valid(): return self.send_error(BAD_REQUEST)
+        if not self._is_json_request(): return self.send_error(BAD_REQUEST)
         if self._path_equals("/fetch"):
             print "A fetch request has been made"
         if self._path_equals("/query"):
             print "A query request has been made"
 
-    def _is_request_valid(self):
+    def _is_json_request(self):
+        ''' '''
         return self.headers.get('Content-Type', "") == 'application/json'
 
     def _path_equals(self, path):
+        ''' Returns True if request path equals `path`, False otherwise '''
         return self.path.lower() == path
 
     def _read_request_body(self):
