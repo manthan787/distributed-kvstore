@@ -58,7 +58,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             print "A query request has been made"
 
     def _is_json_request(self):
-        """ Returns true if the requrst content type is json, false otherwise """
+        """ Returns true if the request content-type is json, false otherwise """
         return self.headers.get('Content-Type', "") == 'application/json'
 
     def _path_equals(self, path):
