@@ -31,6 +31,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        ''' Handles GET requests '''
         if self._path_equals("/fetch"):
             print "A fetch request has been made"
             all_kvs = list(store.get_all())
@@ -44,6 +45,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_error(NOT_FOUND)
 
     def do_PUT(self):
+        ''' Handles PUT requests '''
         if not self._is_json_request(): return self.send_error(BAD_REQUEST)
         request = self._read_request_body()
         if self._path_equals("/set"):
@@ -51,6 +53,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(self)
 
     def do_POST(self):
+        ''' Handles POST requests '''
         if not self._is_json_request(): return self.send_error(BAD_REQUEST)
         if self._path_equals("/fetch"):
             print "A fetch request has been made"
@@ -58,7 +61,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             print "A query request has been made"
 
     def _is_json_request(self):
-        ''' '''
+        ''' Returns true if the requrst content type is json, false otherwise'''
         return self.headers.get('Content-Type', "") == 'application/json'
 
     def _path_equals(self, path):
