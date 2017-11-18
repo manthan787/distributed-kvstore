@@ -10,6 +10,9 @@ class Store(object):
 	@abstractmethod
 	def put(self, key, value): pass
 
+	@abstractmethod
+	def batch_put(self, kvs): pass
+
 
 class InMemoryStore(Store):
 
@@ -21,3 +24,5 @@ class InMemoryStore(Store):
 
 	def put(self, key, value):
 		self.db[key] = value
+
+	def 
