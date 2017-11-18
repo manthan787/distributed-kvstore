@@ -1,6 +1,9 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import urlparse, json
 
+
+store = InMemoryStore()
+
 '''
 Class for handling requests coming to the server.
 '''
@@ -11,7 +14,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 	def do_PUT(self):
 		pass
-	pass
+
+	def do_POST(self):
+		pass
 
 def start_server(addr, port, handler, verbose=False):
 	'''Starts a server at given address and port, with specified `handler`.
