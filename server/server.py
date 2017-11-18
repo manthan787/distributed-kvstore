@@ -4,11 +4,6 @@ import urlparse, json
 from response_codes import *
 
 store = InMemoryStore()
-store.put({"encoding" : "string", "data": "hello"}, {"encoding" : "string", "data" : "world"})
-print store.encodings
-print store.data
-print list(store.get_all())
-print store.batch_put([{"key": {"encoding" : "string", "data": "hell"}, "value": {"encoding" : "string", "data" : "world"}}])
 
 class RequestHandler(BaseHTTPRequestHandler):
     """
@@ -23,7 +18,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     curl http://localhost:3000/query
 
     PUT /set:
-    curl -X PUT -H "Content-Type: application/json" -d '[{"key1":"value1", "key2": "value2"}]' http://localhost:3000/set
+    curl -X PUT -H "Content-Type: application/json" -d '[{"key": {"encoding" : "string", "data": "key1"}, "value": {"encoding" : "string", "data" : "value1"}}, {"key": {"encoding" : "string", "data": "key2"}, "value": {"encoding" : "string", "data" : "value2"}}]' http://localhost:3000/set
     """
 
     def _set_response_headers(self, response_code):
@@ -47,11 +42,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         """ Handles PUT requests """
+        if not self._path_equals("/set"): return self.send_error(NOT_FOUND)
         if not self._is_json_request(): return self.send_error(BAD_REQUEST)
-        request = self._read_request_body()
-        if self._path_equals("/set"):
-            pass
-        self.wfile.write(self)
+        request_data = self._read_request_body()
+        if not request_data: return self.send_error(FORBIDDEN)
+        stats = store.batch_put(request_data)
+        self.wfile.write(json.dumps(stats))
 
     def do_POST(self):
         """ Handles POST requests """
