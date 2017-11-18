@@ -1,5 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
+'''
+This abstract class defines the contract for Store concrete implementations
+'''
 class Store(object):
     __metaclass__ = ABCMeta
 
@@ -16,6 +19,9 @@ class Store(object):
     def batch_put(self, kvs): pass
 
 
+'''
+In-Memory concrete implementation for `Store`
+'''
 class InMemoryStore(Store):
 
     def __init__(self):
