@@ -1,12 +1,14 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from store import InMemoryStore
 import urlparse, json
+from response_codes import *
 
 store = InMemoryStore()
 store.put({"encoding" : "string", "data": "hello"}, {"encoding" : "string", "data" : "world"})
 print store.encodings
 print store.data
 print list(store.get_all())
+print store.batch_put([{"key": {"encoding" : "string", "data": "hell"}, "value": {"encoding" : "string", "data" : "world"}}])
 '''
 Class for handling requests coming to the server.
 
@@ -32,25 +34,26 @@ class RequestHandler(BaseHTTPRequestHandler):
         if self._path_equals("/fetch"):
             print "A fetch request has been made"
             all_kvs = list(store.get_all())
-            self._set_response_headers(200)
-            print all_kvs
-            return self.wfile.write(json.dumps(all_kvs))
+            if all_kvs:
+                self._set_response_headers(SUCCESS_CODE)
+                return self.wfile.write(json.dumps(all_kvs))
+            return self.send_error(BAD_REQUEST)
         if self._path_equals("/query"):
             print "A query request has been made"
             self.wfile.write(self)
-        self.send_error(404)
+        self.send_error(NOT_FOUND)
 
     def do_PUT(self):
-        if not self._is_request_valid(): return self.send_error(400)
-        print self.rfile.read(int(self.headers['Content-Length']))
-        if self._path_equals("/set"): pass
+        if not self._is_request_valid(): return self.send_error(BAD_REQUEST)
+        request = self._read_request_body()
+        if self._path_equals("/set"):
+            pass
         self.wfile.write(self)
 
     def do_POST(self):
-        if not self._is_request_valid(): return self.send_error(400)
+        if not self._is_request_valid(): return self.send_error(BAD_REQUEST)
         if self._path_equals("/fetch"):
             print "A fetch request has been made"
-
         if self._path_equals("/query"):
             print "A query request has been made"
 
@@ -60,12 +63,17 @@ class RequestHandler(BaseHTTPRequestHandler):
     def _path_equals(self, path):
         return self.path.lower() == path
 
-def start_server(addr, port, handler, verbose=False):
+    def _read_request_body(self):
+        ''' Returns the request body as json'''
+        try: return json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+        except: return ""
+
+def start_server(addr, port, handler):
     '''Starts a server at given address and port, with specified `handler`.
     If `verbose` is true, prints extra information on console
     '''
     server = HTTPServer((addr, port), handler)
-    if verbose: print "Server started at: {}:{}".format(addr, port)
+    print "Server started at: {}:{}".format(addr, port)
     server.serve_forever()
 
 if __name__ == '__main__':
@@ -73,4 +81,4 @@ if __name__ == '__main__':
     args = sys.argv
     port = 3000 # Default port for server
     if len(args) == 2: port = int(args[1])
-    start_server("", port, RequestHandler, verbose=True)
+    start_server("", port, RequestHandler)
