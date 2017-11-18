@@ -1,28 +1,32 @@
 from abc import ABCMeta, abstractmethod
 
-'''
-This abstract class defines the contract for Store concrete implementations
-'''
 class Store(object):
+    """ This abstract class defines the contract for Store concrete implementations """
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def get_all(self): pass
+    def get_all(self):
+        """ Return all the key-value pairs in the store """
+        pass
 
     @abstractmethod
-    def get(self, key): pass
+    def get(self, key):
+        """ Return value for specified `key` """
+        pass
 
     @abstractmethod
-    def put(self, key, value): pass
+    def put(self, key, value):
+        """ Put given key-value pair inside the Store """
+        pass
 
     @abstractmethod
-    def batch_put(self, kvs): pass
+    def batch_put(self, kvs):
+        """ Put list of key-value pairs inside the Store """
+        pass
 
 
-'''
-In-Memory concrete implementation for `Store`
-'''
 class InMemoryStore(Store):
+    """ In-Memory concrete implementation for `Store` """
 
     def __init__(self):
         self.encodings = {}
