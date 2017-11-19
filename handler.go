@@ -42,8 +42,6 @@ func fetchGetHandler(w http.ResponseWriter, r *http.Request) {
 
 // Fetches all key-value pairs from given `server`
 func fetchFromServer(server string) []Element {
-	log.Println("Querying Server ", server)
-	log.Println(getServerPath(server, "/fetch"))
 	elements := make([]Element, 0)
 	resp, err := http.Get(getServerPath(server, "/fetch"))
 	if err != nil {
@@ -56,7 +54,6 @@ func fetchFromServer(server string) []Element {
 // Handles `POST /fetch listOfKeys` requests
 func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 	keys := readKeys(r.Body)
-	log.Println(keys)
 	servs := servers()
 	numServers := len(servs)
 	serverKeys := groupKeysByServer(numServers, keys)
@@ -69,7 +66,6 @@ func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("Error marshalling list of keys:", err)
 		}
-		log.Println(string(encodedList))
 		els := fetchListFromServer(servs[idx], encodedList)
 		result = append(result, decodeKVs(els)...)
 	}
@@ -97,7 +93,6 @@ func decode(k *KeyValue) {
 		if err != nil {
 			log.Println("Error decoding base64 key/value")
 		}
-		log.Println("Decoded ", k.Data, "to ", string(decoded))
 		k.Data = string(decoded)
 	}
 }
@@ -120,7 +115,6 @@ func groupKeysByServer(numServers int, keys []KeyValue) [][]KeyValue {
 			k.Data = base64.StdEncoding.EncodeToString([]byte(k.Data))
 		}
 		serverIndex := hash(k.Data) % numServers
-		log.Println("ServerIndex ", serverIndex, "for key ", k.Data)
 		serverKeys[serverIndex] = append(serverKeys[serverIndex], k)
 	}
 	return serverKeys
@@ -129,8 +123,6 @@ func groupKeysByServer(numServers int, keys []KeyValue) [][]KeyValue {
 // Similar to fetchFromServer function, but only returns key-value pairs
 // for given list of keys
 func fetchListFromServer(server string, list []byte) []Element {
-	log.Println("Querying Server ", server)
-	log.Println("URL ", getServerPath(server, "/fetch"))
 	elements := make([]Element, 0)
 	resp, err := http.Post(getServerPath(server, "/fetch"), "application/json", bytes.NewBuffer(list))
 	if err != nil {
@@ -164,7 +156,6 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error marshalling list of keys:", err)
 			break
 		}
-		log.Println(string(encodedList))
 		els := fetchQueryRespFromServer(servs[idx], encodedList)
 		result = append(result, decodeQueryResponse(els)...)
 	}
@@ -179,7 +170,6 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 // Similar to fetchListFromServer function, but this function returns `QueryResponse`
 // instead of `Element`
 func fetchQueryRespFromServer(server string, list []byte) []QueryResponse {
-	log.Println("Querying Server ", server)
 	responses := make([]QueryResponse, 0)
 	resp, err := http.Post(getServerPath(server, "/query"), "application/json", bytes.NewBuffer(list))
 	if err != nil {
