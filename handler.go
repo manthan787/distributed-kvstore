@@ -61,6 +61,7 @@ func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 	serverKeys := groupKeysByServer(numServers, keys)
 	result := make([]Element, 0)
 	for idx, keys := range(serverKeys) {
+		if len(keys) == 0 {continue}
 		encodedList, err := json.Marshal(keys)
 		if err != nil {
 			log.Println("Error marshalling list of keys:", err)
