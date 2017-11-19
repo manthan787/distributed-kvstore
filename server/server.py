@@ -30,10 +30,11 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         """ Handles GET requests """
-        if not self._path_equals("/fetch"): self.send_error(NOT_FOUND)
+        print self.headers
+        if not self._path_equals("/fetch"): return self.send_error(NOT_FOUND)
         all_kvs = list(store.get_all())
         self._set_response_headers(SUCCESS_CODE)
-        return self.wfile.write(json.dumps(all_kvs))
+        self.wfile.write(json.dumps(all_kvs))
 
     def do_PUT(self):
         """ Handles PUT requests """
@@ -42,6 +43,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         request_data = self._read_request_body()
         if not request_data: return self.send_error(FORBIDDEN)
         stats = store.batch_put(request_data)
+        self._set_response_headers(SUCCESS_CODE)
         self.wfile.write(json.dumps(stats))
 
     def do_POST(self):
