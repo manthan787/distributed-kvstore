@@ -11,6 +11,8 @@ import (
     "hash/fnv"
     "gopkg.in/resty.v1"
     "encoding/base64"
+    "path"
+   	"net/url"
 )
 
 // Encoding and Data of a Key or Value
@@ -47,6 +49,13 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
   fmt.Fprintf(w, "KV Proxy is working.")
 }
 
+func getServerPath(server string, p string) string {
+	u, _ := url.Parse("http://" + server)
+	u.Path = path.Join(u.Path, p)
+	return u.String()
+}
+
+
 // Handle set PUT request to store given key-value batch as
 // [ {key: {encoding: , data:}, value: {encoding: , data:}}, ... ]
 func setHandler(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +65,7 @@ func setHandler(w http.ResponseWriter, r *http.Request) {
 	for i, req := range(requests) {
 		if len(req) > 0 {
 			reqBody := createReqBody(req)
-			response := put("http://" + s[i] + "/set", reqBody)
+			response := put(getServerPath(s[i], "/set"), reqBody)
 			mergeRes(&aggRes, &response)
 		}
 	}

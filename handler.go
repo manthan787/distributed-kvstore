@@ -42,8 +42,9 @@ func fetchGetHandler(w http.ResponseWriter, r *http.Request) {
 // Fetches all key-value pairs from given `server`
 func fetchFromServer(server string) []Element {
 	log.Println("Querying Server ", server)
+	log.Println(getServerPath(server, "/fetch"))
 	elements := make([]Element, 0)
-	resp, err := http.Get(server + "/fetch")
+	resp, err := http.Get(getServerPath(server, "/fetch"))
 	if err != nil {
 		log.Fatal("Error", err)
 	}
@@ -103,8 +104,9 @@ func groupKeysByServer(numServers int, keys []KeyValue) [][]KeyValue{
 // for given list of keys
 func fetchListFromServer(server string, list []byte) []Element {
 	log.Println("Querying Server ", server)
+	log.Println("URL ", getServerPath(server, "/fetch"))
 	elements := make([]Element, 0)
-	resp, err := http.Post(server + "/fetch", "application/json", bytes.NewBuffer(list))
+	resp, err := http.Post(getServerPath(server, "/fetch"), "application/json", bytes.NewBuffer(list))
 	if err != nil {
 		log.Fatal("Error", err)
 	}
