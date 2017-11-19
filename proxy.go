@@ -87,13 +87,7 @@ func createSetRequests(elements []Element) [][]Element {
 	return serverRequests
 }
 
-func fetchHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-}
 
-func queryHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-}
 
 func hash(s string) int {
         h := fnv.New32a()
