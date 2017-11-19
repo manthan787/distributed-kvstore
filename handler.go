@@ -9,6 +9,16 @@ import (
     "bytes"
 )
 
+// Type for returning and storing Query responses
+// Example, {"key": {"encoding": "string", "data": "key"}, "value": true}
+type QueryResponse struct {
+	Key KeyValue `json:"key"`
+	Value bool `json:"value"`
+}
+
+// Handles fetch requests with two possible methods:
+// 1) GET /fetch => Returns all key-value pairs from all servers
+// 2) POST /fetch listOfKeys => Returns all key-value pairs for given listOfKeys
 func fetchHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 		case "GET":
@@ -20,6 +30,7 @@ func fetchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Handles GET /fetch requests
 func fetchGetHandler(w http.ResponseWriter, r *http.Request) {
 	var allElements []Element
 	serverAddrs := servers()
@@ -29,6 +40,7 @@ func fetchGetHandler(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(allElements)
 }
 
+// Fetches all key-value pairs from given `server`
 func fetchFromServer(server string) []Element {
 	log.Println("Querying Server ", server)
 	elements := make([]Element, 0)
@@ -40,6 +52,7 @@ func fetchFromServer(server string) []Element {
 	return elements
 }
 
+// Handles `POST /fetch listOfKeys` requests
 func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 	keys := make([]KeyValue, 0)
 	json.NewDecoder(r.Body).Decode(&keys)
@@ -62,6 +75,8 @@ func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+// Groups all keys based on what server they are stored on.
+// The grouped values are then used to send batch requests to each server.
 func groupKeysByServer(numServers int, keys []KeyValue) [][]KeyValue{
 	serverKeys := initServerKeys(numServers)
 	for _, k := range(keys) {
@@ -72,6 +87,8 @@ func groupKeysByServer(numServers int, keys []KeyValue) [][]KeyValue{
 	return serverKeys
 }
 
+// Similar to fetchFromServer function, but only returns key-value pairs
+// for given list of keys
 func fetchListFromServer(server string, list []byte) []Element {
 	log.Println("Querying Server ", server)
 	elements := make([]Element, 0)
@@ -91,6 +108,6 @@ func initServerKeys(numServers int) [][]KeyValue {
 	return serverKeys
 }
 
+// Handles /query POST requests
 func queryHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 }
