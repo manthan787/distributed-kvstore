@@ -25,10 +25,13 @@ type keyvalue struct {
 func fetchHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Get("http://localhost:3000/fetch")
 	if err != nil {
-		log.Println("Error", err)
+		log.Fatal("Error", err)
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error While reading response: ", err)
+	}
 	log.Println("String", string(body))
     fmt.Fprintf(w, "%s", body)
 }
