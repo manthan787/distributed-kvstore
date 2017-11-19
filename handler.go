@@ -1,12 +1,11 @@
 package main
 
 import (
-    "fmt"
-    "html"
     "net/http"
     "log"
     "encoding/json"
     "bytes"
+    "io"
 )
 
 // Type for returning and storing Query responses
@@ -54,11 +53,10 @@ func fetchFromServer(server string) []Element {
 
 // Handles `POST /fetch listOfKeys` requests
 func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
-	keys := make([]KeyValue, 0)
-	json.NewDecoder(r.Body).Decode(&keys)
+	keys := readKeys(r.Body)
 	log.Println(keys)
-	numServers := len(servers())
 	servs := servers()
+	numServers := len(servs)
 	serverKeys := groupKeysByServer(numServers, keys)
 	result := make([]Element, 0)
 	for idx, keys := range(serverKeys) {
@@ -72,7 +70,21 @@ func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(els)
 		result = append(result, els...)
 	}
+	if len(keys) > len(result) {
+		w.WriteHeader(http.StatusBadRequest)
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+	}
 	json.NewEncoder(w).Encode(result)
+}
+
+func readKeys(body io.ReadCloser) []KeyValue {
+	keys := make([]KeyValue, 0)
+	err := json.NewDecoder(body).Decode(&keys)
+	if err != nil {
+		log.Fatal("Error decoding json ", err)
+	}
+	return keys
 }
 
 // Groups all keys based on what server they are stored on.
@@ -110,4 +122,39 @@ func initServerKeys(numServers int) [][]KeyValue {
 
 // Handles /query POST requests
 func queryHandler(w http.ResponseWriter, r *http.Request) {
+	keys := readKeys(r.Body)
+	servs := servers()
+	numServers := len(servs)
+	serverKeys := groupKeysByServer(numServers, keys)
+	result := make([]QueryResponse, 0)
+	for idx, keys := range(serverKeys) {
+		encodedList, err := json.Marshal(keys)
+		if err != nil {
+			log.Println("Error marshalling list of keys:", err)
+			break
+		}
+		log.Println(string(encodedList))
+		els := fetchQueryRespFromServer(servs[idx], encodedList)
+		log.Println(els)
+		result = append(result, els...)
+	}
+	if len(keys) > len(result) {
+		w.WriteHeader(http.StatusBadRequest)
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	json.NewEncoder(w).Encode(result)
+}
+
+// Similar to fetchListFromServer function, but this function returns `QueryResponse`
+// instead of `Element`
+func fetchQueryRespFromServer(server string, list []byte) []QueryResponse {
+	log.Println("Querying Server ", server)
+	responses := make([]QueryResponse, 0)
+	resp, err := http.Post(server + "/fetch", "application/json", bytes.NewBuffer(list))
+	if err != nil {
+		log.Fatal("Error", err)
+	}
+	json.NewDecoder(resp.Body).Decode(&responses)
+	return responses
 }
