@@ -21,8 +21,9 @@ Install `python 2.7` (required for server)
 
 Install `golang` (required for proxy)
 
-Run `make install` to install dependencies and `make check` to run example application with a few servers spawned on localhost.
+Run `make build` to install dependencies and build executables
 
+Run `make check` to run example application with a few servers spawned on localhost.
 
 ## Team Members
 
