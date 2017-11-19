@@ -64,15 +64,14 @@ func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 		encodedList, err := json.Marshal(keys)
 		if err != nil {
 			log.Println("Error marshalling list of keys:", err)
-			break
 		}
 		log.Println(string(encodedList))
 		els := fetchListFromServer(servs[idx], encodedList)
 		log.Println(els)
 		result = append(result, els...)
 	}
-	if len(keys) > len(result) {
-		w.WriteHeader(http.StatusBadRequest)
+	if len(keys) == len(result) {
+		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -83,7 +82,7 @@ func readKeys(body io.ReadCloser) []KeyValue {
 	keys := make([]KeyValue, 0)
 	err := json.NewDecoder(body).Decode(&keys)
 	if err != nil {
-		log.Fatal("Error decoding json ", err)
+		log.Println("Error decoding json ", err)
 	}
 	return keys
 }
@@ -130,6 +129,7 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 	serverKeys := groupKeysByServer(numServers, keys)
 	result := make([]QueryResponse, 0)
 	for idx, keys := range(serverKeys) {
+		if len(keys) == 0 {continue}
 		encodedList, err := json.Marshal(keys)
 		if err != nil {
 			log.Println("Error marshalling list of keys:", err)
@@ -140,8 +140,8 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(els)
 		result = append(result, els...)
 	}
-	if len(keys) > len(result) {
-		w.WriteHeader(http.StatusBadRequest)
+	if len(keys) == len(result) {
+		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -153,7 +153,7 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 func fetchQueryRespFromServer(server string, list []byte) []QueryResponse {
 	log.Println("Querying Server ", server)
 	responses := make([]QueryResponse, 0)
-	resp, err := http.Post(server + "/fetch", "application/json", bytes.NewBuffer(list))
+	resp, err := http.Post(getServerPath(server, "/query"), "application/json", bytes.NewBuffer(list))
 	if err != nil {
 		log.Fatal("Error", err)
 	}
