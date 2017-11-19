@@ -35,7 +35,7 @@ func fetchGetHandler(w http.ResponseWriter, r *http.Request) {
 	var allElements []Element
 	serverAddrs := servers()
 	for _, s := range serverAddrs {
-		allElements = append(allElements, fetchFromServer(s)...)
+		allElements = append(allElements, decodeKVs(fetchFromServer(s))...)
 	}
 	json.NewEncoder(w).Encode(allElements)
 }
@@ -71,8 +71,7 @@ func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Println(string(encodedList))
 		els := fetchListFromServer(servs[idx], encodedList)
-		log.Println(els)
-		result = append(result, els...)
+		result = append(result, decodeKVs(els)...)
 	}
 	if len(keys) == len(result) {
 		w.WriteHeader(http.StatusOK)
@@ -80,6 +79,27 @@ func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	json.NewEncoder(w).Encode(result)
+}
+
+// Given a list of Elements, decodes binary (base64) keys and values
+func decodeKVs(kvs []Element) []Element {
+	for i := 0; i < len(kvs); i++ {
+		decode(&kvs[i].Key)
+		decode(&kvs[i].Value)
+	}
+	return kvs
+}
+
+// Given an instance of type `KeyValue`, decodes it if encoding is binary
+func decode(k *KeyValue) {
+	if k.Encoding == "binary" {
+		decoded, err := base64.StdEncoding.DecodeString(k.Data)
+		if err != nil {
+			log.Println("Error decoding base64 key/value")
+		}
+		log.Println("Decoded ", k.Data, "to ", string(decoded))
+		k.Data = string(decoded)
+	}
 }
 
 func readKeys(body io.ReadCloser) []KeyValue {
@@ -146,8 +166,7 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Println(string(encodedList))
 		els := fetchQueryRespFromServer(servs[idx], encodedList)
-		log.Println(els)
-		result = append(result, els...)
+		result = append(result, decodeQueryResponse(els)...)
 	}
 	if len(keys) == len(result) {
 		w.WriteHeader(http.StatusOK)
@@ -168,4 +187,11 @@ func fetchQueryRespFromServer(server string, list []byte) []QueryResponse {
 	}
 	json.NewDecoder(resp.Body).Decode(&responses)
 	return responses
+}
+
+func decodeQueryResponse(qr []QueryResponse) []QueryResponse {
+	for i := 0; i < len(qr); i++ {
+		decode(&qr[i].Key)
+	}
+	return qr
 }
