@@ -3,7 +3,7 @@ from store import InMemoryStore
 import urlparse, json
 from response_codes import *
 
-store = InMemoryStore()
+store = InMemoryStore(set(["string", "binary"]))
 
 class RequestHandler(BaseHTTPRequestHandler):
     """
@@ -14,13 +14,15 @@ class RequestHandler(BaseHTTPRequestHandler):
     GET /fetch:
     curl http://localhost:3000/fetch
 
+    POST /fetch:
+    curl -X POST -H "Content-Type: application/json" -d '[{"encoding": "string", "data": "key1"}, {"encoding": "string", "data": "key176"}]' http://localhost:3000/fetch
+
     GET /query:
     curl http://localhost:3000/query
 
     PUT /set:
     curl -X PUT -H "Content-Type: application/json" -d '[{"key": {"encoding" : "string", "data": "key1"}, "value": {"encoding" : "string", "data" : "value1"}}, {"key": {"encoding" : "string", "data": "key2"}, "value": {"encoding" : "string", "data" : "value2"}}]' http://localhost:3000/set
     """
-
     def _set_response_headers(self, response_code):
         self.send_header("Content-Type", "application/json")
         self.send_response(response_code)
@@ -28,17 +30,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         """ Handles GET requests """
-        if self._path_equals("/fetch"):
-            print "A fetch request has been made"
-            all_kvs = list(store.get_all())
-            if all_kvs:
-                self._set_response_headers(SUCCESS_CODE)
-                return self.wfile.write(json.dumps(all_kvs))
-            return self.send_error(BAD_REQUEST)
-        if self._path_equals("/query"):
-            print "A query request has been made"
-            self.wfile.write(self)
-        self.send_error(NOT_FOUND)
+        if not self._path_equals("/fetch"): self.send_error(NOT_FOUND)
+        all_kvs = list(store.get_all())
+        if all_kvs:
+            self._set_response_headers(SUCCESS_CODE)
+            return self.wfile.write(json.dumps(all_kvs))
+        return self.send_error(BAD_REQUEST)
 
     def do_PUT(self):
         """ Handles PUT requests """
@@ -53,7 +50,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         """ Handles POST requests """
         if not self._is_json_request(): return self.send_error(BAD_REQUEST)
         if self._path_equals("/fetch"):
-            print "A fetch request has been made"
+            keys = self._read_request_body()
+            print keys
+            if not keys: return self.send_error(FORBIDDEN)
+            result = list(store.batch_get(keys))
+            if len(keys) == len(result):
+                self._set_response_headers(SUCCESS_CODE)
+            else:
+                self._set_response_headers(FORBIDDEN)
+            return self.wfile.write(json.dumps(result))
         if self._path_equals("/query"):
             print "A query request has been made"
 
