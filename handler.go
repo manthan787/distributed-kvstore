@@ -1,18 +1,18 @@
 package main
 
 import (
-    "net/http"
-    "log"
-    "encoding/json"
-    "bytes"
-    "io"
+	"bytes"
+	"encoding/json"
+	"io"
+	"log"
+	"net/http"
 )
 
 // Type for returning and storing Query responses
 // Example, {"key": {"encoding": "string", "data": "key"}, "value": true}
 type QueryResponse struct {
-	Key KeyValue `json:"key"`
-	Value bool `json:"value"`
+	Key   KeyValue `json:"key"`
+	Value bool     `json:"value"`
 }
 
 // Handles fetch requests with two possible methods:
@@ -20,12 +20,12 @@ type QueryResponse struct {
 // 2) POST /fetch listOfKeys => Returns all key-value pairs for given listOfKeys
 func fetchHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-		case "GET":
-			fetchGetHandler(w, r)
-		case "POST":
-			fetchPostHandler(w, r)
-		default:
-			log.Println("Invalid Method for /fetch")
+	case "GET":
+		fetchGetHandler(w, r)
+	case "POST":
+		fetchPostHandler(w, r)
+	default:
+		log.Println("Invalid Method for /fetch")
 	}
 }
 
@@ -36,7 +36,7 @@ func fetchGetHandler(w http.ResponseWriter, r *http.Request) {
 	for _, s := range serverAddrs {
 		allElements = append(allElements, fetchFromServer(s)...)
 	}
-    json.NewEncoder(w).Encode(allElements)
+	json.NewEncoder(w).Encode(allElements)
 }
 
 // Fetches all key-value pairs from given `server`
@@ -60,8 +60,10 @@ func fetchPostHandler(w http.ResponseWriter, r *http.Request) {
 	numServers := len(servs)
 	serverKeys := groupKeysByServer(numServers, keys)
 	result := make([]Element, 0)
-	for idx, keys := range(serverKeys) {
-		if len(keys) == 0 {continue}
+	for idx, keys := range serverKeys {
+		if len(keys) == 0 {
+			continue
+		}
 		encodedList, err := json.Marshal(keys)
 		if err != nil {
 			log.Println("Error marshalling list of keys:", err)
@@ -90,9 +92,9 @@ func readKeys(body io.ReadCloser) []KeyValue {
 
 // Groups all keys based on what server they are stored on.
 // The grouped values are then used to send batch requests to each server.
-func groupKeysByServer(numServers int, keys []KeyValue) [][]KeyValue{
+func groupKeysByServer(numServers int, keys []KeyValue) [][]KeyValue {
 	serverKeys := initServerKeys(numServers)
-	for _, k := range(keys) {
+	for _, k := range keys {
 		serverIndex := hash(k.Data) % numServers
 		log.Println("ServerIndex ", serverIndex, "for key ", k.Data)
 		serverKeys[serverIndex] = append(serverKeys[serverIndex], k)
@@ -116,7 +118,7 @@ func fetchListFromServer(server string, list []byte) []Element {
 
 func initServerKeys(numServers int) [][]KeyValue {
 	serverKeys := make([][]KeyValue, numServers)
-	for i:=0; i < numServers; i++ {
+	for i := 0; i < numServers; i++ {
 		serverKeys[i] = make([]KeyValue, 0)
 	}
 	return serverKeys
@@ -129,8 +131,10 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 	numServers := len(servs)
 	serverKeys := groupKeysByServer(numServers, keys)
 	result := make([]QueryResponse, 0)
-	for idx, keys := range(serverKeys) {
-		if len(keys) == 0 {continue}
+	for idx, keys := range serverKeys {
+		if len(keys) == 0 {
+			continue
+		}
 		encodedList, err := json.Marshal(keys)
 		if err != nil {
 			log.Println("Error marshalling list of keys:", err)
