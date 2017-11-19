@@ -11,6 +11,7 @@ import (
     "github.com/gorilla/mux"
     "hash/fnv"
     "gopkg.in/resty.v1"
+    "encoding/base64"
 )
 
 type KeyValue struct {
@@ -49,45 +50,78 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 func setHandler(w http.ResponseWriter, r *http.Request) {
 	s := servers()
 	elements := make([]Element, 0)
-	fmt.Println(r)
 	json.NewDecoder(r.Body).Decode(&elements)
+	fmt.Println(elements)
 	requests := createSetRequests(elements)
-	// var response Response
+	var aggRes Response
 
-	for i := 0; i < len(requests); i++ {
-		if len(requests[i]) > 0 {
+	for i, req := range(requests) {
+		if len(req) > 0 {
 			url := "http://" + s[i] + "/set"
 			reqBody := new(bytes.Buffer)
-			json.NewEncoder(reqBody).Encode(requests[i])
+			json.NewEncoder(reqBody).Encode(req)
 			fmt.Println("URL: ", url, "Server Req: ", reqBody)
+
 			res, _ := resty.R().
 	      SetHeader("Content-Type", "application/json").
 	      SetBody(reqBody).
 	      Put(url)
 			fmt.Println(res.String())
-			// var response Response
-			// content := json.NewDecoder(res.Body()).Decode(&response)
-			// fmt.Println(content)
-			// response.KeysAdded += content.KeysAdded
+
+			var response Response
+			json.Unmarshal(res.Body(), &response)
+			fmt.Println(response.KeysFailed)
+			mergeRes(&aggRes, response)
 		}
+	}
+
+	fmt.Println(aggRes)
+
+	setStatusCode(w, &aggRes)
+
+	json.NewEncoder(w).Encode(aggRes)
+}
+
+func mergeRes(aggRes *Response, res Response) {
+	aggRes.KeysAdded += res.KeysAdded
+	aggRes.KeysFailed = append(aggRes.KeysFailed, res.KeysFailed...)
+}
+
+func setStatusCode(w http.ResponseWriter, aggRes *Response) {
+	if len(aggRes.KeysFailed) > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+	} else {
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
 func createSetRequests(elements []Element) [][]Element {
 	numOfServers := len(servers())
-	serverRequests := make([][]Element, numOfServers)
-	for i := 0; i < numOfServers; i++ {
-		serverRequests[i] = make([]Element, 0)
-	}
-	for i := 0; i < len(elements); i++ {
-		kv := elements[i]
+	serverKeys := initServerKeys(numOfServers)
+	for _, kv := range(elements) {
 		serverIndex := hash(kv.Key.Data) % numOfServers
-		serverRequests[serverIndex] = append(serverRequests[serverIndex], kv)
+
+		if kv.Key.Encoding == "binary" {
+			kv.Key.Data = base64.StdEncoding.EncodeToString([]byte(kv.Key.Data))
+		}
+
+		if kv.Value.Encoding == "binary" {
+			kv.Value.Data = base64.StdEncoding.EncodeToString([]byte(kv.Value.Data))
+		}
+
+		serverKeys[serverIndex] = append(serverKeys[serverIndex], kv)
 	}
-	return serverRequests
+	fmt.Println(serverKeys)
+	return serverKeys
 }
 
-
+func initServerKeys(numOfServers int) [][]Element {
+	serverKeys := make([][]Element, numOfServers)
+	for i:=0; i < numOfServers; i++ {
+		serverKeys[i] = make([]Element, 0)
+	}
+	return serverKeys
+}
 
 func hash(s string) int {
         h := fnv.New32a()
