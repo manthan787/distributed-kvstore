@@ -32,10 +32,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         """ Handles GET requests """
         if not self._path_equals("/fetch"): self.send_error(NOT_FOUND)
         all_kvs = list(store.get_all())
-        if all_kvs:
-            self._set_response_headers(SUCCESS_CODE)
-            return self.wfile.write(json.dumps(all_kvs))
-        return self.send_error(BAD_REQUEST)
+        self._set_response_headers(SUCCESS_CODE)
+        return self.wfile.write(json.dumps(all_kvs))
 
     def do_PUT(self):
         """ Handles PUT requests """
