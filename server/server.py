@@ -24,7 +24,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     curl -X PUT -H "Content-Type: application/json" -d '[{"key": {"encoding" : "string", "data": "key1"}, "value": {"encoding" : "string", "data" : "value1"}}, {"key": {"encoding" : "string", "data": "key2"}, "value": {"encoding" : "string", "data" : "value2"}}]' http://localhost:3000/set
     """
     def _set_response_headers(self, response_code):
-        self.send_header("Content-Type", "application/json")
+        #self.send_header("Content-Type", "application/json")
         self.send_response(response_code)
         self.end_headers()
 
