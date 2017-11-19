@@ -43,7 +43,6 @@ func servers() []string {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(len(servers()), " servers")
   fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 }
 
@@ -51,7 +50,6 @@ func setHandler(w http.ResponseWriter, r *http.Request) {
 	s := servers()
 	elements := make([]Element, 0)
 	json.NewDecoder(r.Body).Decode(&elements)
-	fmt.Println(elements)
 	requests := createSetRequests(elements)
 	var aggRes Response
 
@@ -60,22 +58,18 @@ func setHandler(w http.ResponseWriter, r *http.Request) {
 			url := "http://" + s[i] + "/set"
 			reqBody := new(bytes.Buffer)
 			json.NewEncoder(reqBody).Encode(req)
-			fmt.Println("URL: ", url, "Server Req: ", reqBody)
 
 			res, _ := resty.R().
 	      SetHeader("Content-Type", "application/json").
 	      SetBody(reqBody).
 	      Put(url)
-			fmt.Println(res.String())
 
 			var response Response
 			json.Unmarshal(res.Body(), &response)
-			fmt.Println(response.KeysFailed)
 			mergeRes(&aggRes, response)
 		}
 	}
 
-	fmt.Println(aggRes)
 
 	setStatusCode(w, &aggRes)
 
@@ -97,7 +91,7 @@ func setStatusCode(w http.ResponseWriter, aggRes *Response) {
 
 func createSetRequests(elements []Element) [][]Element {
 	numOfServers := len(servers())
-	serverKeys := initServerKeys(numOfServers)
+	serverKeys := initServerKVs(numOfServers)
 	for _, kv := range(elements) {
 		serverIndex := hash(kv.Key.Data) % numOfServers
 
@@ -111,17 +105,18 @@ func createSetRequests(elements []Element) [][]Element {
 
 		serverKeys[serverIndex] = append(serverKeys[serverIndex], kv)
 	}
-	fmt.Println(serverKeys)
 	return serverKeys
 }
 
-func initServerKeys(numOfServers int) [][]Element {
+func initServerKVs(numOfServers int) [][]Element {
 	serverKeys := make([][]Element, numOfServers)
 	for i:=0; i < numOfServers; i++ {
 		serverKeys[i] = make([]Element, 0)
 	}
 	return serverKeys
 }
+
+// func encode()
 
 func hash(s string) int {
         h := fnv.New32a()
