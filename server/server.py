@@ -84,9 +84,12 @@ def start_server(addr, port, handler):
     print "Server started at: {}:{}".format(addr, port)
     server.serve_forever()
 
-if __name__ == '__main__':
+def main():
     import sys
     args = sys.argv
     port = 3000 # Default port for server
     if len(args) == 2: port = int(args[1])
     start_server("", port, RequestHandler)
+
+if __name__ == '__main__':
+    main()
