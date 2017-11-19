@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"log"
@@ -95,6 +96,9 @@ func readKeys(body io.ReadCloser) []KeyValue {
 func groupKeysByServer(numServers int, keys []KeyValue) [][]KeyValue {
 	serverKeys := initServerKeys(numServers)
 	for _, k := range keys {
+		if k.Encoding == "binary" {
+			k.Data = base64.StdEncoding.EncodeToString([]byte(k.Data))
+		}
 		serverIndex := hash(k.Data) % numServers
 		log.Println("ServerIndex ", serverIndex, "for key ", k.Data)
 		serverKeys[serverIndex] = append(serverKeys[serverIndex], k)
