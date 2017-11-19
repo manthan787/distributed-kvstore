@@ -106,10 +106,13 @@ func createReqBody(req []Element) *bytes.Buffer {
 // perform PUT for given url and request body and return Response
 func put(url string, reqBody *bytes.Buffer) Response {
 	var response Response
-	res, _ := resty.R().
+	res, err := resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(reqBody).
 		Put(url)
+	if err != nil {
+		log.Fatal("Error", err)
+	}
 	json.Unmarshal(res.Body(), &response)
 	return response
 }
