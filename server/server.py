@@ -51,16 +51,19 @@ class RequestHandler(BaseHTTPRequestHandler):
         if not self._is_json_request(): return self.send_error(BAD_REQUEST)
         if self._path_equals("/fetch"):
             keys = self._read_request_body()
-            print keys
             if not keys: return self.send_error(FORBIDDEN)
-            result = list(store.batch_get(keys))
-            if len(keys) == len(result):
-                self._set_response_headers(SUCCESS_CODE)
-            else:
-                self._set_response_headers(FORBIDDEN)
-            return self.wfile.write(json.dumps(result))
+            self._handle_post_paths(keys, list(store.batch_get(keys)))
         if self._path_equals("/query"):
-            print "A query request has been made"
+            keys = self._read_request_body()
+            if not keys: return self.send_error(FORBIDDEN)
+            self._handle_post_paths(keys, list(store.batch_lookup(keys)))
+
+    def _handle_post_paths(self, keys, result):
+        if len(keys) == len(result):
+            self._set_response_headers(SUCCESS_CODE)
+        else:
+            self._set_response_headers(FORBIDDEN)
+        return self.wfile.write(json.dumps(result))
 
     def _is_json_request(self):
         """ Returns true if the request content-type is json, false otherwise """

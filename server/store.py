@@ -26,7 +26,12 @@ class Store(object):
 
     @abstractmethod
     def batch_get(self, keys):
-        """ Get a list of key-value pairs from the Store """
+        """ Return key-value pairs for given `keys` """
+        pass
+
+    @abstractmethod
+    def batch_lookup(self, keys):
+        """ Lookup given keys in store, return True if keys exist and False if keys don't """
         pass
 
 class InMemoryStore(Store):
@@ -63,7 +68,7 @@ class InMemoryStore(Store):
         return True
 
     def _is_valid_kv(self, key, value):
-        return key['data'] in self.data and key['encoding'] in self.valid_encodings \
+        return key['encoding'] in self.valid_encodings \
                 and value['encoding'] in self.valid_encodings
 
     def batch_put(self, kvs):
@@ -77,6 +82,14 @@ class InMemoryStore(Store):
         for key in keys:
             result, success = self.get(key)
             if success: yield result
+
+    def batch_lookup(self, keys):
+        for key in keys:
+            try:
+                if key['data'] in self.data: yield {"key": key, "value": True}
+                else: yield {"key": key, "value": False}
+            except:
+                yield {"key": key, "value": False}
 
     def _get_payload(self, k):
         return {"encoding": self.encodings[k], "data": k}
