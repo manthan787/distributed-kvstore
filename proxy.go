@@ -1,52 +1,52 @@
 package main
 
 import (
-	"os"
 	"bytes"
-    "fmt"
-    "log"
-    "net/http"
-    "encoding/json"
-    "github.com/gorilla/mux"
-    "hash/fnv"
-    "gopkg.in/resty.v1"
-    "encoding/base64"
-    "path"
-   	"net/url"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"github.com/gorilla/mux"
+	"gopkg.in/resty.v1"
+	"hash/fnv"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
 )
 
 // Encoding and Data of a Key or Value
 type KeyValue struct {
 	Encoding string `json:"encoding"`
-	Data string `json:"data"`
+	Data     string `json:"data"`
 }
 
 // Key and Value for key-value store
 type Element struct {
-	Key KeyValue `json:"key"`
+	Key   KeyValue `json:"key"`
 	Value KeyValue `json:"value"`
 }
 
 // Response given by proxy server to client
 type Response struct {
-	KeysAdded int `json:"keys_added"`
+	KeysAdded  int        `json:"keys_added"`
 	KeysFailed []KeyValue `json:"keys_failed"`
 }
 
 // Create proxy server to listen at localhost:8080
 // Handle valid routes: /, set, fetch, query
 func main() {
-  router := mux.NewRouter().StrictSlash(true)
-  router.HandleFunc("/", rootHandler)
-  router.HandleFunc("/set", setHandler).Methods("PUT")
-  router.HandleFunc("/fetch", fetchHandler).Methods("GET", "POST")
-  router.HandleFunc("/query", queryHandler).Methods("POST")
-  log.Fatal(http.ListenAndServe(":8080", router))
+	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/", rootHandler)
+	router.HandleFunc("/set", setHandler).Methods("PUT")
+	router.HandleFunc("/fetch", fetchHandler).Methods("GET", "POST")
+	router.HandleFunc("/query", queryHandler).Methods("POST")
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 // Simple root handler to see if server is working
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-  fmt.Fprintf(w, "KV Proxy is working.")
+	fmt.Fprintf(w, "KV Proxy is working.")
 }
 
 func getServerPath(server string, p string) string {
@@ -55,14 +55,13 @@ func getServerPath(server string, p string) string {
 	return u.String()
 }
 
-
 // Handle set PUT request to store given key-value batch as
 // [ {key: {encoding: , data:}, value: {encoding: , data:}}, ... ]
 func setHandler(w http.ResponseWriter, r *http.Request) {
 	var aggRes Response
 	s := servers()
 	requests := createSetRequests(decodedReq(r))
-	for i, req := range(requests) {
+	for i, req := range requests {
 		if len(req) > 0 {
 			reqBody := createReqBody(req)
 			response := put(getServerPath(s[i], "/set"), reqBody)
@@ -73,7 +72,7 @@ func setHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(aggRes)
 }
 
-// give list of server addresses given as argument **without http://** 
+// give list of server addresses given as argument **without http://**
 func servers() []string {
 	return os.Args[1:]
 }
@@ -89,9 +88,9 @@ func decodedReq(r *http.Request) []Element {
 func createSetRequests(elements []Element) [][]Element {
 	numOfServers := len(servers())
 	serverKeys := initServerKVs(numOfServers)
-	for _, kv := range(elements) {
-		serverIndex := hash(kv.Key.Data) % numOfServers
+	for _, kv := range elements {
 		encode(&kv)
+		serverIndex := hash(kv.Key.Data) % numOfServers
 		serverKeys[serverIndex] = append(serverKeys[serverIndex], kv)
 	}
 	return serverKeys
@@ -108,7 +107,7 @@ func createReqBody(req []Element) *bytes.Buffer {
 func put(url string, reqBody *bytes.Buffer) Response {
 	var response Response
 	res, _ := resty.R().
-	  SetHeader("Content-Type", "application/json").
+		SetHeader("Content-Type", "application/json").
 		SetBody(reqBody).
 		Put(url)
 	json.Unmarshal(res.Body(), &response)
@@ -131,7 +130,7 @@ func setStatusCode(w http.ResponseWriter, aggRes *Response) {
 
 func initServerKVs(numOfServers int) [][]Element {
 	serverKeys := make([][]Element, numOfServers)
-	for i:=0; i < numOfServers; i++ {
+	for i := 0; i < numOfServers; i++ {
 		serverKeys[i] = make([]Element, 0)
 	}
 	return serverKeys
@@ -139,7 +138,7 @@ func initServerKVs(numOfServers int) [][]Element {
 
 func encode(kv *Element) {
 	if kv.Key.Encoding == "binary" {
-			kv.Key.Data = base64.StdEncoding.EncodeToString([]byte(kv.Key.Data))
+		kv.Key.Data = base64.StdEncoding.EncodeToString([]byte(kv.Key.Data))
 	}
 	if kv.Value.Encoding == "binary" {
 		kv.Value.Data = base64.StdEncoding.EncodeToString([]byte(kv.Value.Data))
@@ -147,7 +146,7 @@ func encode(kv *Element) {
 }
 
 func hash(s string) int {
-  h := fnv.New32a()
-  h.Write([]byte(s))
-  return int(h.Sum32())
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return int(h.Sum32())
 }
