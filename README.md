@@ -14,6 +14,7 @@ The project includes two main components:
 
 **Server** code is responsible for spinning up new http servers and enabling servers to store key-value pairs in-memory.
 
+The proxy server exposes an HTTP API that clients can use to `put` and `get` key-value pairs.
 
 ## Running the code
 
